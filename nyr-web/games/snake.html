@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1f17">
+<title>Snake • 𝙽𝚈𝚛 𝙱°𝚝</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:#0b1f17;color:#e8fff1;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 18px;user-select:none;-webkit-user-select:none}
+h1{font-size:19px;margin:2px 0;letter-spacing:.3px}
+.sub{color:#8fbfa3;font-size:12px;margin:0 0 10px;text-align:center}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.chip{background:#12301f;border:1px solid #1f4a31;border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{color:#4ade80}
+button{font:inherit;color:#e8fff1;background:#12301f;border:1px solid #1f4a31;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.on{background:#4ade80;color:#06210f;border-color:#4ade80;font-weight:700}
+button:active{transform:scale(.97)}
+.msg{min-height:24px;margin:8px 0;font-weight:600;text-align:center}
+.tag{margin-top:auto;padding-top:18px;color:#8fbfa3;font-size:12px;letter-spacing:.6px}
+canvas{width:min(92vw,340px);height:auto;aspect-ratio:1;background:#0f2a1c;border:2px solid #1f4a31;border-radius:12px;touch-action:none}
+.pad{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,56px);gap:6px;margin:12px 0}
+.pad button{padding:0;font-size:22px}
+.pad .u{grid-column:2;grid-row:1}.pad .l{grid-column:1;grid-row:2}.pad .d{grid-column:2;grid-row:2}.pad .r{grid-column:3;grid-row:2}
+</style></head><body>
+<h1>🐍 Snake</h1>
+<p class="sub">Geser di papan atau pakai tombol arah</p>
+<div class="bar"><span class="chip">Skor <b id="sc">0</b></span><span class="chip">Terbaik <b id="bs">0</b></span></div>
+<canvas id="cv" width="340" height="340"></canvas>
+<div class="msg" id="msg">Tekan Mulai</div>
+<div class="pad"><button class="u" id="bu">▲</button><button class="l" id="bl">◀</button><button class="d" id="bd">▼</button><button class="r" id="br">▶</button></div>
+<button id="start" class="on">Mulai</button>
+<div class="tag">@𝙽𝚈𝚛 𝙱°𝚝</div>
+<script id="logic">
+var DIRS={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+function opposite(a,b){return (a==="up"&&b==="down")||(a==="down"&&b==="up")||(a==="left"&&b==="right")||(a==="right"&&b==="left");}
+function nextHead(h,dir){var d=DIRS[dir];return [h[0]+d[0],h[1]+d[1]];}
+function outOfBounds(p,n){return p[0]<0||p[1]<0||p[0]>=n||p[1]>=n;}
+function hitsBody(p,snake){for(var i=0;i<snake.length;i++)if(snake[i][0]===p[0]&&snake[i][1]===p[1])return true;return false;}
+function placeFood(snake,n,rng){var free=[];for(var x=0;x<n;x++)for(var y=0;y<n;y++)if(!hitsBody([x,y],snake))free.push([x,y]);
+  return free.length?free[Math.floor((rng||Math.random)()*free.length)]:null;}
+function stepSnake(state,n,rng){var h=nextHead(state.snake[0],state.dir);
+  var ate=!!state.food&&h[0]===state.food[0]&&h[1]===state.food[1];
+  var body=ate?state.snake:state.snake.slice(0,-1);
+  if(outOfBounds(h,n)||hitsBody(h,body))return {dead:true,state:state};
+  var snake=[h].concat(ate?state.snake:state.snake.slice(0,-1));
+  return {dead:false,state:{snake:snake,dir:state.dir,food:ate?placeFood(snake,n,rng):state.food,score:state.score+(ate?1:0),ate:ate}};}
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var N=17,C=20,cv=$("cv"),ctx=cv.getContext("2d"),st,nextDir,timer=null,running=false,best=0;
+try{best=parseInt(localStorage.getItem("nyrsnake")||"0",10)||0}catch(e){}
+function say(t){$("msg").textContent=t}
+function draw(){ctx.fillStyle="#0f2a1c";ctx.fillRect(0,0,N*C,N*C);
+  ctx.fillStyle="#12301f";for(var x=0;x<N;x++)for(var y=0;y<N;y++)if((x+y)%2===0)ctx.fillRect(x*C,y*C,C,C);
+  if(st.food){ctx.fillStyle="#f87171";ctx.beginPath();ctx.arc(st.food[0]*C+C/2,st.food[1]*C+C/2,C/2-3,0,7);ctx.fill();}
+  st.snake.forEach(function(p,i){ctx.fillStyle=i===0?"#bbf7d0":"#4ade80";ctx.fillRect(p[0]*C+1,p[1]*C+1,C-2,C-2);});
+  $("sc").textContent=st.score;$("bs").textContent=best;}
+function reset(){var mid=Math.floor(N/2),snake=[[mid,mid],[mid-1,mid],[mid-2,mid]];
+  st={snake:snake,dir:"right",food:placeFood(snake,N),score:0};nextDir="right";draw();}
+function speed(){return Math.max(70,150-st.score*4)}
+function tick(){if(!running)return;
+  if(!opposite(st.dir,nextDir))st.dir=nextDir;
+  var r=stepSnake(st,N);
+  if(r.dead){running=false;say("Game over 💀 Skor "+st.score);$("start").textContent="Main Lagi";return}
+  st=r.state;if(st.score>best){best=st.score;try{localStorage.setItem("nyrsnake",String(best))}catch(e){}}
+  draw();timer=setTimeout(tick,speed());}
+function start(){clearTimeout(timer);reset();running=true;say("");$("start").textContent="Ulang";timer=setTimeout(tick,speed());}
+function turn(d){if(!opposite(st.dir,d))nextDir=d;if(!running&&st.score===0&&$("start").textContent==="Mulai")start();}
+$("start").onclick=start;
+$("bu").onclick=function(){turn("up")};$("bd").onclick=function(){turn("down")};$("bl").onclick=function(){turn("left")};$("br").onclick=function(){turn("right")};
+document.addEventListener("keydown",function(e){var m={ArrowUp:"up",ArrowDown:"down",ArrowLeft:"left",ArrowRight:"right",w:"up",s:"down",a:"left",d:"right"}[e.key];if(m){e.preventDefault();turn(m)}});
+var sx=0,sy=0;
+cv.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+cv.addEventListener("touchmove",function(e){e.preventDefault()},{passive:false});
+cv.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<20)return;
+  if(Math.abs(dx)>Math.abs(dy))turn(dx>0?"right":"left");else turn(dy>0?"down":"up");});
+reset();
+})();
+</script>
+</body></html>
