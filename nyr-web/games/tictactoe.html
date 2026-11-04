@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1f17">
+<title>Tic Tac Toe • 𝙽𝚈𝚛 𝙱°𝚝</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:#0b1f17;color:#e8fff1;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 18px;user-select:none;-webkit-user-select:none}
+h1{font-size:19px;margin:2px 0;letter-spacing:.3px}
+.sub{color:#8fbfa3;font-size:12px;margin:0 0 10px;text-align:center}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.chip{background:#12301f;border:1px solid #1f4a31;border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{color:#4ade80}
+button{font:inherit;color:#e8fff1;background:#12301f;border:1px solid #1f4a31;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.on{background:#4ade80;color:#06210f;border-color:#4ade80;font-weight:700}
+button:active{transform:scale(.97)}
+.msg{min-height:24px;margin:8px 0;font-weight:600;text-align:center}
+.tag{margin-top:auto;padding-top:18px;color:#8fbfa3;font-size:12px;letter-spacing:.6px}
+#board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(86vw,320px);margin:6px 0}
+.cell{aspect-ratio:1;font-size:44px;padding:0;border-radius:14px}
+.cell.win{background:#4ade80}
+</style></head><body>
+<h1>❌⭕ Tic Tac Toe</h1>
+<p class="sub">Kamu = ❌ • Bot = ⭕ (atau main berdua di HP yang sama)</p>
+<div class="bar"><button id="mBot" class="on">Lawan Bot</button><button id="mTwo">2 Pemain</button></div>
+<div class="bar" id="lvl"><button id="lEz">Mudah</button><button id="lHd" class="on">Sulit</button></div>
+<div id="board"></div>
+<div class="msg" id="msg"></div>
+<div class="bar"><span class="chip">❌ <b id="sx">0</b></span><span class="chip">⭕ <b id="so">0</b></span><span class="chip">Seri <b id="sd">0</b></span></div>
+<button id="reset">Main Lagi</button>
+<div class="tag">@𝙽𝚈𝚛 𝙱°𝚝</div>
+<script id="logic">
+var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function winnerLine(b){for(var i=0;i<LINES.length;i++){var l=LINES[i];if(b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[0]]===b[l[2]])return l;}return null;}
+function winner(b){var l=winnerLine(b);if(l)return b[l[0]];for(var i=0;i<9;i++)if(!b[i])return null;return "seri";}
+function minimax(b,turn,ai,d){var w=winner(b);if(w==="seri")return 0;if(w)return w===ai?10-d:d-10;
+  var best=turn===ai?-99:99,next=turn==="X"?"O":"X";
+  for(var i=0;i<9;i++){if(!b[i]){b[i]=turn;var s=minimax(b,next,ai,d+1);b[i]="";best=turn===ai?Math.max(best,s):Math.min(best,s);}}
+  return best;}
+function bestMove(b,ai){var human=ai==="X"?"O":"X",best=-99,mv=-1;
+  for(var i=0;i<9;i++){if(!b[i]){b[i]=ai;var s=minimax(b,human,ai,1);b[i]="";if(s>best){best=s;mv=i;}}}
+  return mv;}
+function randomMove(b,rng){var e=[];for(var i=0;i<9;i++)if(!b[i])e.push(i);return e.length?e[Math.floor((rng||Math.random)()*e.length)]:-1;}
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var b=Array(9).fill(""),turn="X",over=false,mode="bot",level="hard",sc={X:0,O:0,d:0},cells=[];
+var boardEl=$("board");
+for(var i=0;i<9;i++){(function(i){var c=document.createElement("button");c.className="cell";c.onclick=function(){play(i)};boardEl.appendChild(c);cells.push(c);})(i)}
+function draw(){for(var i=0;i<9;i++){cells[i].textContent=b[i]==="X"?"❌":b[i]==="O"?"⭕":"";}}
+function say(t){$("msg").textContent=t}
+function score(){$("sx").textContent=sc.X;$("so").textContent=sc.O;$("sd").textContent=sc.d}
+function end(){var l=winnerLine(b),w=winner(b);over=true;
+  if(l){l.forEach(function(i){cells[i].classList.add("win")});sc[w]++;
+    say(mode==="bot"?(w==="X"?"Kamu menang! 🎉":"Bot menang 🤖"):("Pemain "+(w==="X"?"❌":"⭕")+" menang! 🎉"));}
+  else{sc.d++;say("Seri 🤝")}
+  score();}
+function play(i){if(over||b[i]||(mode==="bot"&&turn!=="X"))return;b[i]=turn;draw();
+  if(winner(b)){end();return}
+  turn=turn==="X"?"O":"X";
+  if(mode==="bot"){say("Bot berpikir...");setTimeout(botMove,350)}else say("Giliran "+(turn==="X"?"❌":"⭕"));}
+function botMove(){if(over)return;var m=(level==="easy"&&Math.random()<0.7)?randomMove(b):bestMove(b,"O");b[m]="O";draw();
+  if(winner(b)){end();return}turn="X";say("Giliranmu ❌")}
+function reset(){b=Array(9).fill("");turn="X";over=false;cells.forEach(function(c){c.classList.remove("win")});draw();say(mode==="bot"?"Giliranmu ❌":"Giliran ❌");}
+function setMode(m){mode=m;sc={X:0,O:0,d:0};score();$("mBot").className=m==="bot"?"on":"";$("mTwo").className=m==="two"?"on":"";$("lvl").style.display=m==="bot"?"flex":"none";reset();}
+function setLevel(l){level=l;$("lEz").className=l==="easy"?"on":"";$("lHd").className=l==="hard"?"on":"";reset();}
+$("mBot").onclick=function(){setMode("bot")};$("mTwo").onclick=function(){setMode("two")};
+$("lEz").onclick=function(){setLevel("easy")};$("lHd").onclick=function(){setLevel("hard")};
+$("reset").onclick=reset;
+reset();
+})();
+</script>
+</body></html>
