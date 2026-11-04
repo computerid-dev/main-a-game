@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1f17">
+<title>2048 • 𝙽𝚈𝚛 𝙱°𝚝</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:#0b1f17;color:#e8fff1;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 18px;user-select:none;-webkit-user-select:none}
+h1{font-size:19px;margin:2px 0;letter-spacing:.3px}
+.sub{color:#8fbfa3;font-size:12px;margin:0 0 10px;text-align:center}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.chip{background:#12301f;border:1px solid #1f4a31;border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{color:#4ade80}
+button{font:inherit;color:#e8fff1;background:#12301f;border:1px solid #1f4a31;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.on{background:#4ade80;color:#06210f;border-color:#4ade80;font-weight:700}
+button:active{transform:scale(.97)}
+.msg{min-height:24px;margin:8px 0;font-weight:600;text-align:center}
+.tag{margin-top:auto;padding-top:18px;color:#8fbfa3;font-size:12px;letter-spacing:.6px}
+#board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#12301f;padding:8px;border-radius:14px;width:min(92vw,340px);aspect-ratio:1;touch-action:none}
+.t{border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#06210f}
+</style></head><body>
+<h1>🔢 2048</h1>
+<p class="sub">Geser untuk menggabungkan angka yang sama</p>
+<div class="bar"><span class="chip">Skor <b id="sc">0</b></span><span class="chip">Terbaik <b id="bs">0</b></span></div>
+<div id="board"></div>
+<div class="msg" id="msg"></div>
+<button id="reset">Game Baru</button>
+<div class="tag">@𝙽𝚈𝚛 𝙱°𝚝</div>
+<script id="logic">
+function slideRow(r){var a=r.filter(Boolean),score=0;
+  for(var i=0;i<a.length-1;i++){if(a[i]===a[i+1]){a[i]*=2;score+=a[i];a.splice(i+1,1);}}
+  while(a.length<4)a.push(0);return {row:a,score:score};}
+function lineIdx(dir,k){var idx=[];for(var j=0;j<4;j++){var r,c;
+  if(dir==="left"){r=k;c=j}else if(dir==="right"){r=k;c=3-j}else if(dir==="up"){r=j;c=k}else{r=3-j;c=k}
+  idx.push([r,c]);}return idx;}
+function move(g,dir){var n=g.map(function(r){return r.slice()}),gain=0,moved=false;
+  for(var k=0;k<4;k++){var idx=lineIdx(dir,k);
+    var line=idx.map(function(p){return n[p[0]][p[1]]});var res=slideRow(line);
+    for(var j=0;j<4;j++){var p=idx[j];if(n[p[0]][p[1]]!==res.row[j])moved=true;n[p[0]][p[1]]=res.row[j];}
+    gain+=res.score;}
+  return {grid:n,gain:gain,moved:moved};}
+function emptyCells(g){var e=[];for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(!g[r][c])e.push([r,c]);return e;}
+function canMove(g){if(emptyCells(g).length)return true;
+  for(var r=0;r<4;r++)for(var c=0;c<4;c++){if(c<3&&g[r][c]===g[r][c+1])return true;if(r<3&&g[r][c]===g[r+1][c])return true;}
+  return false;}
+function addTile(g,rng){var e=emptyCells(g);if(!e.length)return g;var r=rng||Math.random,p=e[Math.floor(r()*e.length)];
+  g[p[0]][p[1]]=r()<0.9?2:4;return g;}
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var COL={0:"#1a3b28",2:"#b7f7cf",4:"#8be9b0",8:"#fbbf24",16:"#fb923c",32:"#f87171",64:"#ef4444",128:"#fde047",256:"#facc15",512:"#a3e635",1024:"#4ade80",2048:"#22d3ee"};
+var g,score,best=0,won=false,over=false,boardEl=$("board"),tiles=[];
+try{best=parseInt(localStorage.getItem("nyr2048")||"0",10)||0}catch(e){}
+for(var i=0;i<16;i++){var d=document.createElement("div");d.className="t";boardEl.appendChild(d);tiles.push(d)}
+function draw(){for(var r=0;r<4;r++)for(var c=0;c<4;c++){var v=g[r][c],t=tiles[r*4+c];
+  t.textContent=v||"";t.style.background=COL[v]||"#0ea5e9";t.style.fontSize=(v>=1024?"20px":v>=128?"26px":"32px");}
+  $("sc").textContent=score;$("bs").textContent=best;}
+function say(t){$("msg").textContent=t}
+function reset(){g=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];score=0;won=false;over=false;addTile(g);addTile(g);say("");draw();}
+function go(dir){if(over)return;var r=move(g,dir);if(!r.moved)return;g=r.grid;score+=r.gain;addTile(g);
+  if(score>best){best=score;try{localStorage.setItem("nyr2048",String(best))}catch(e){}}
+  draw();
+  if(!won&&g.some(function(row){return row.indexOf(2048)>=0})){won=true;say("Mencapai 2048! 🎉 Lanjut terus!")}
+  if(!canMove(g)){over=true;say("Game over 😵 Skor "+score)}}
+document.addEventListener("keydown",function(e){var m={ArrowLeft:"left",ArrowRight:"right",ArrowUp:"up",ArrowDown:"down",a:"left",d:"right",w:"up",s:"down"}[e.key];if(m){e.preventDefault();go(m)}});
+var sx=0,sy=0;
+boardEl.addEventListener("touchstart",function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+boardEl.addEventListener("touchmove",function(e){e.preventDefault()},{passive:false});
+boardEl.addEventListener("touchend",function(e){var dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;
+  if(Math.abs(dx)>Math.abs(dy))go(dx>0?"right":"left");else go(dy>0?"down":"up");});
+$("reset").onclick=reset;
+reset();
+})();
+</script>
+</body></html>
