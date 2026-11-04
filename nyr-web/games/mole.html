@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1f17">
+<title>Tap Tikus • 𝙽𝚈𝚛 𝙱°𝚝</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:#0b1f17;color:#e8fff1;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 18px;user-select:none;-webkit-user-select:none}
+h1{font-size:19px;margin:2px 0;letter-spacing:.3px}
+.sub{color:#8fbfa3;font-size:12px;margin:0 0 10px;text-align:center}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.chip{background:#12301f;border:1px solid #1f4a31;border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{color:#4ade80}
+button{font:inherit;color:#e8fff1;background:#12301f;border:1px solid #1f4a31;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.on{background:#4ade80;color:#06210f;border-color:#4ade80;font-weight:700}
+button:active{transform:scale(.97)}
+.msg{min-height:24px;margin:8px 0;font-weight:600;text-align:center}
+.tag{margin-top:auto;padding-top:18px;color:#8fbfa3;font-size:12px;letter-spacing:.6px}
+#board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(88vw,330px);margin:8px 0}
+.hole{aspect-ratio:1;font-size:46px;padding:0;border-radius:50%;background:#0f2a1c;border:3px solid #1f4a31}
+.hole.up{background:#4ade80}
+</style></head><body>
+<h1>🐹 Tap Tikus</h1>
+<p class="sub">Ketuk tikus secepat mungkin selama 30 detik</p>
+<div class="bar"><span class="chip">Skor <b id="sc">0</b></span><span class="chip">Waktu <b id="tm">30</b>s</span><span class="chip">Terbaik <b id="bs">0</b></span></div>
+<div id="board"></div>
+<div class="msg" id="msg">Tekan Mulai</div>
+<button id="start" class="on">Mulai</button>
+<div class="tag">@𝙽𝚈𝚛 𝙱°𝚝</div>
+<script id="logic">
+function pickHole(prev,n,rng){var r=rng||Math.random,h;do{h=Math.floor(r()*n)}while(h===prev&&n>1);return h;}
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var holes=[],cur=-1,score=0,left=30,best=0,running=false,tM,tC,boardEl=$("board");
+try{best=parseInt(localStorage.getItem("nyrmole")||"0",10)||0}catch(e){}
+$("bs").textContent=best;
+for(var i=0;i<9;i++){(function(i){var b=document.createElement("button");b.className="hole";b.onclick=function(){hit(i)};boardEl.appendChild(b);holes.push(b)})(i)}
+function clear(){holes.forEach(function(h){h.textContent="";h.className="hole"});cur=-1}
+function pop(){if(!running)return;clear();cur=pickHole(cur,9);holes[cur].textContent="🐹";holes[cur].className="hole up";
+  tM=setTimeout(pop,450+Math.random()*450)}
+function hit(i){if(!running||i!==cur)return;score++;$("sc").textContent=score;clear();clearTimeout(tM);tM=setTimeout(pop,150)}
+function finish(){running=false;clearTimeout(tM);clearInterval(tC);clear();
+  if(score>best){best=score;$("bs").textContent=best;try{localStorage.setItem("nyrmole",String(best))}catch(e){}}
+  $("msg").textContent="Waktu habis! Skor "+score+" 🎉";$("start").textContent="Main Lagi"}
+function start(){clearTimeout(tM);clearInterval(tC);score=0;left=30;$("sc").textContent=0;$("tm").textContent=30;$("msg").textContent="Ketuk tikusnya!";
+  running=true;$("start").textContent="Ulang";pop();
+  tC=setInterval(function(){left--;$("tm").textContent=left;if(left<=0)finish()},1000)}
+$("start").onclick=start;
+})();
+</script>
+</body></html>
