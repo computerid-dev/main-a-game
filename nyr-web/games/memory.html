@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1f17">
+<title>Memory Match • 𝙽𝚈𝚛 𝙱°𝚝</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;background:#0b1f17;color:#e8fff1;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 18px;user-select:none;-webkit-user-select:none}
+h1{font-size:19px;margin:2px 0;letter-spacing:.3px}
+.sub{color:#8fbfa3;font-size:12px;margin:0 0 10px;text-align:center}
+.bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.chip{background:#12301f;border:1px solid #1f4a31;border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{color:#4ade80}
+button{font:inherit;color:#e8fff1;background:#12301f;border:1px solid #1f4a31;border-radius:12px;padding:10px 16px;cursor:pointer}
+button.on{background:#4ade80;color:#06210f;border-color:#4ade80;font-weight:700}
+button:active{transform:scale(.97)}
+.msg{min-height:24px;margin:8px 0;font-weight:600;text-align:center}
+.tag{margin-top:auto;padding-top:18px;color:#8fbfa3;font-size:12px;letter-spacing:.6px}
+#board{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(92vw,340px)}
+.card{aspect-ratio:1;font-size:32px;padding:0;border-radius:12px;background:#1a4a2e}
+.card.up{background:#e8fff1}
+.card.ok{background:#4ade80}
+</style></head><body>
+<h1>🧠 Memory Match</h1>
+<p class="sub">Temukan semua pasangan kartu yang sama</p>
+<div class="bar"><span class="chip">Langkah <b id="mv">0</b></span><span class="chip">Waktu <b id="tm">0</b>s</span></div>
+<div id="board"></div>
+<div class="msg" id="msg"></div>
+<button id="reset">Acak Ulang</button>
+<div class="tag">@𝙽𝚈𝚛 𝙱°𝚝</div>
+<script id="logic">
+var ICONS=["🍎","🍌","🍇","🍒","🍉","🍍","🥝","🍓"];
+function makeDeck(rng){var d=ICONS.concat(ICONS),r=rng||Math.random;
+  for(var i=d.length-1;i>0;i--){var j=Math.floor(r()*(i+1)),t=d[i];d[i]=d[j];d[j]=t;}return d;}
+</script>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var deck,open,locked,moves,matched,t0,timer,btns=[],boardEl=$("board");
+for(var i=0;i<16;i++){(function(i){var b=document.createElement("button");b.className="card";b.onclick=function(){flip(i)};boardEl.appendChild(b);btns.push(b)})(i)}
+function say(t){$("msg").textContent=t}
+function tick(){$("tm").textContent=Math.floor((Date.now()-t0)/1000)}
+function reset(){clearInterval(timer);deck=makeDeck();open=[];locked=false;moves=0;matched=0;t0=0;
+  btns.forEach(function(b){b.textContent="❓";b.className="card"});$("mv").textContent=0;$("tm").textContent=0;say("");}
+function flip(i){if(locked||btns[i].className!=="card")return;
+  if(!t0){t0=Date.now();timer=setInterval(tick,500)}
+  btns[i].textContent=deck[i];btns[i].className="card up";open.push(i);
+  if(open.length===2){moves++;$("mv").textContent=moves;locked=true;var a=open[0],b=open[1];
+    if(deck[a]===deck[b]){btns[a].className="card ok";btns[b].className="card ok";open=[];locked=false;matched++;
+      if(matched===8){clearInterval(timer);tick();say("Selesai! 🎉 "+moves+" langkah")}}
+    else setTimeout(function(){btns[a].textContent="❓";btns[b].textContent="❓";btns[a].className="card";btns[b].className="card";open=[];locked=false},700);}}
+$("reset").onclick=reset;
+reset();
+})();
+</script>
+</body></html>
