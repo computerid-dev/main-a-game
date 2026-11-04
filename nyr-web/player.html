@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id" data-anticlone="pending">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Player • NYr B°t</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.cover{width:100%;aspect-ratio:16/9;object-fit:cover;border:4px solid var(--ink);background:var(--sage);display:block}
+.cover[hidden]{display:none}
+#bar{width:100%;height:22px;accent-color:var(--red);margin:14px 0 4px}
+.time{display:flex;justify-content:space-between;font-size:13px}
+#title{font-size:22px;margin:12px 0 2px;word-break:break-word}
+</style>
+</head>
+<body>
+<main>
+  <span class="tag">NYr B°t • Player</span>
+  <h1>Putar Lagu</h1>
+  <div class="card" id="box">
+    <img class="cover" id="cover" alt="" hidden>
+    <div id="title">Memuat…</div>
+    <div class="muted" id="artist"></div>
+    <input id="bar" type="range" min="0" max="1000" value="0" aria-label="Posisi lagu">
+    <div class="time"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="back">-10s</button>
+      <button class="btn red" id="play">Putar</button>
+      <button class="btn" id="fwd">+10s</button>
+      <a class="btn sage" id="dl" href="#" download>Unduh</a>
+    </div>
+    <audio id="au" preload="metadata"></audio>
+  </div>
+  <p class="muted" id="msg"></p>
+  <footer>Link ini kedaluwarsa otomatis. Dibuat oleh NYr B°t.</footer>
+</main>
+<script src="../anti-clone.js" data-mode="guard" data-origin=""></script>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var t=new URLSearchParams(location.search).get("t")||"";
+  var au=$("au");
+  function fmt(s){s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
+  function dead(m){$("title").textContent="Tidak tersedia";$("msg").textContent=m;["play","back","fwd","dl"].forEach(function(i){$(i).style.display="none"})}
+  if(!/^[\w-]{8,40}$/.test(t)){dead("Token tidak valid.");return}
+  fetch("../api/track/"+t).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
+    $("title").textContent=d.title||"Tanpa judul";$("artist").textContent=d.artist||"";
+    if(d.thumbnail&&/^https:\/\//.test(d.thumbnail)){$("cover").src=d.thumbnail;$("cover").hidden=false}
+    au.src="../media/"+t;$("dl").href="../media/"+t+"?dl=1";
+  }).catch(function(){dead("Link kedaluwarsa atau tidak ditemukan.")});
+  $("play").onclick=function(){au.paused?au.play():au.pause()};
+  au.onplay=function(){$("play").textContent="Jeda"};au.onpause=function(){$("play").textContent="Putar"};
+  au.onloadedmetadata=function(){$("dur").textContent=fmt(au.duration)};
+  au.ontimeupdate=function(){$("cur").textContent=fmt(au.currentTime);if(au.duration)$("bar").value=au.currentTime/au.duration*1000};
+  au.onerror=function(){$("msg").textContent="Audio tidak dapat diputar di browser ini."};
+  $("bar").oninput=function(){if(au.duration)au.currentTime=$("bar").value/1000*au.duration};
+  $("back").onclick=function(){au.currentTime=Math.max(0,au.currentTime-10)};
+  $("fwd").onclick=function(){au.currentTime=Math.min(au.duration||0,au.currentTime+10)};
+})();
+</script>
+</body>
+</html>
